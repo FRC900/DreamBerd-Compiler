@@ -1,58 +1,37 @@
 use chumsky::prelude::*;
-use crate::token::Token;
+use crate::{expression::Expr};
 
-fn lexer<'src>() -> impl Parser<&'src str, Vec<Token<'src>>> {
-     // A parser for numbers
-     let num = text::int(10)
-     .then(just('.').then(text::digits(10)).or_not())
-     .to_slice()
-     .from_str()
-     .unwrapped()
-     .map(Token::Num);
-
-    // A parser for strings
-    let str_ = just('"')
-        .ignore_then(none_of('"').repeated())
-        .then_ignore(just('"'))
-        .to_slice()
-        .map(Token::Str);
-
-    // A parser for operators
-    let op = one_of("+*-/!=")
-        .repeated()
-        .at_least(1)
-        .to_slice()
-        .map(Token::Op);
-
-    // A parser for control characters (delimiters, semicolons, etc.)
-    let ctrl = one_of("()[]{};,").map(Token::Ctrl);
-
-    // A parser for identifiers and keywords
-    let ident = text::ascii::ident().map(|ident: &str| match ident {
-        "fn" => Token::Fn,
-        "let" => Token::Let,
-        "print" => Token::Print,
-        "if" => Token::If,
-        "else" => Token::Else,
-        "true" => Token::Bool(true),
-        "false" => Token::Bool(false),
-        "null" => Token::Null,
-        _ => Token::Ident(ident),
-    });
-
-    // A single token can be one of the above
-    let token = num.or(str_).or(op).or(ctrl).or(ident);
-
-    let comment = just("//")
-        .then(any().and_is(just('\n').not()).repeated())
-        .padded();
-
-    token
-        .map_with(|tok, e| (tok, e.span()))
-        .padded_by(comment.repeated())
-        .padded()
-        // If we encounter an error, skip and attempt to lex the next character as a token instead
-        .recover_with(skip_then_retry_until(any().ignored(), end()))
-        .repeated()
-        .collect()
+pub fn parser<'src>() -> impl Parser<char, Expr, Error = Simple<char>> {
+    recursive(|expr| {
+        let int = text::int(10)
+            .map(|s: String| Expr::Float(s.parse().unwrap()))
+            .padded();
+    
+        let atom = int
+            .or(expr.delimited_by(just('('), just(')'))).padded();
+    
+        let op = |c| just(c).padded();
+    
+        let unary = op('-')
+            .repeated()
+            .then(atom)
+            .foldr(|_op, rhs| Expr::Neg(Box::new(rhs)));
+    
+        let product = unary.clone()
+            .then(op('*').to(Expr::Mul as fn(_, _) -> _)
+                .or(op('/').to(Expr::Div as fn(_, _) -> _))
+                .then(unary)
+                .repeated())
+            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)));
+    
+        let sum = product.clone()
+            .then(op('+').to(Expr::Add as fn(_, _) -> _)
+                .or(op('-').to(Expr::Sub as fn(_, _) -> _))
+                .then(product)
+                .repeated())
+            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)));
+    
+        sum
+    })
+        .then_ignore(end())
 }
