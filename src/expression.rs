@@ -3,6 +3,7 @@ pub enum Expr {
     // We'll tackle what integers really are later
     Int(i64),
     Float(f64),
+    Var(String),
 
     Neg(Box<Expr>),
     Add(Box<Expr>, Box<Expr>),
