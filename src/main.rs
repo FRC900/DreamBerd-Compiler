@@ -63,7 +63,15 @@ fn main() {
             }   
         }
     } else { 
-        let src = std::fs::read_to_string(cli.input.unwrap()).unwrap();
+        // Ensure that the extension is correct. 
+        let path = cli.input.unwrap();
+        if !path.ends_with(".db3") {
+            println!("Error: Given file doesn't end with the correct extension (.db3)");
+            return;
+        }
+        let src = std::fs::read_to_string(path).unwrap();
+        
+
         match parser().parse(src) {
             Ok(ast) => match eval(&ast, &mut Vec::new(), &mut Vec::new()) {
                 Ok(output) => println!("{}", output),

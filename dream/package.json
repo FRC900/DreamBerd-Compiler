@@ -13,7 +13,7 @@
     "languages": [{
       "id": "dreamberd",
       "aliases": ["DreamBerd", "dreamberd"],
-      "extensions": [".dream",".dreamberd",".berd"],
+      "extensions": [".db3"],
       "configuration": "./language-configuration.json",
       "icon": {
        
