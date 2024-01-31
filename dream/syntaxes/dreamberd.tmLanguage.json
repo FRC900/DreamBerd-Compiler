@@ -1,0 +1,33 @@
+{
+	"scopeName": "source.dreamberd",
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "DreamBerd",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.dreamberd",
+				"match": "\\b(if|true|const|var|return)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.dreamberd",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.dreamberd",
+					"match": "\\\\."
+				}
+			]
+		}
+	}
+	
+}
